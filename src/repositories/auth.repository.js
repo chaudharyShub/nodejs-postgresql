@@ -12,6 +12,7 @@ const findByEmail = async (email) => {
 const getUserDetails = async (email) => {
     const result = await pool.query(
         `select 
+            u.id,
             u.email, 
             u.role, 
             p.bio, 
@@ -42,12 +43,13 @@ const createUser = async (fname, lname, email, passwordHash, username) => {
         )
         
         select  
+            u.id,
             u.email, 
             u.role, 
             p.fname, 
             p.lname,
             p.username
-        from new_user u left join new_profile p on u.id = p.id
+        from new_user u left join new_profile p on u.id = p.user_id
             `,
         [email, passwordHash, fname, lname, username]
     );
