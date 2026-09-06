@@ -6,7 +6,7 @@ const pool = require("./config/db");
 const PORT = process.env.PORT || 5000;
 
 pool
-    .query("SELECT * from users")
+    .query("SELECT 1 from users")
     .then(() => {
         console.log("PostgreSQL connected successfully");
 

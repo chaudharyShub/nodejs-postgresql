@@ -33,7 +33,7 @@ const login = async (email, password) => {
 
     return {
         user: {
-            id: userDetails.user_id,
+            id: userDetails.id,
             fname: userDetails.fname,
             lname: userDetails.lname,
             email: userDetails.email,

@@ -26,7 +26,29 @@ const getAllProfileData = async (req, res, next) => {
     }
 };
 
+const updateProfile = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const body = req.body;
+        const avatar = req.file;
+
+        const result = await profileService.updateProfile({
+            userId,
+            body,
+            avatar
+        });
+
+        res.status(200).json({
+            message: "Profile updated successfully",
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getProfileData,
-    getAllProfileData
+    getAllProfileData,
+    updateProfile
 };

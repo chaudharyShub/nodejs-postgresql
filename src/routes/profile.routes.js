@@ -1,11 +1,13 @@
 const express = require('express');
 
-const authenticate = require("../middlewares/authenticate.middlewares");
-const { getAllProfileData, getProfileData } = require("../controllers/profile.controller");
+const upload = require("../middlewares/upload.middleware");
+const authenticate = require("../middlewares/authenticate.middleware");
+const { getAllProfileData, getProfileData, updateProfile } = require("../controllers/profile.controller");
 
 const router = express.Router();
 
-router.get('/', authenticate, getAllProfileData); // temp
+router.get('/', authenticate, getAllProfileData); // temp, implement "admin" authorization
 router.get('/:id', authenticate, getProfileData);
+router.put('/', authenticate, upload.single("image"), updateProfile);
 
 module.exports = router;
