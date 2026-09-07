@@ -13,19 +13,6 @@ const getProfileData = async (req, res, next) => {
     }
 };
 
-const getAllProfileData = async (req, res, next) => {
-    try {
-        const result = await profileService.getAllProfileData();
-
-        res.status(200).json({
-            message: "All users fetched successfully",
-            data: result
-        });
-    } catch (error) {
-        next(error);
-    }
-};
-
 const updateProfile = async (req, res, next) => {
     try {
         const userId = req.user.id;
@@ -49,6 +36,5 @@ const updateProfile = async (req, res, next) => {
 
 module.exports = {
     getProfileData,
-    getAllProfileData,
     updateProfile
 };

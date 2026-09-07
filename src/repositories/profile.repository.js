@@ -1,70 +1,62 @@
 const pool = require('../config/db');
+const getFollowsCount = require("../utils/getFollowsCount");
 
 const getProfileData = async (id) => {
-    const result = await pool.query(
-        `select 
-            u.id,
-            u.email, 
-            u.role, 
+    try {
+        await pool.query('begin');
+
+        const result = await pool.query(
+            `select 
+            u.id as user_id,
             p.bio, 
             p.avatar, 
-            p.fname, 
-            p.username,
-            p.lname 
+            p.fname as first_name, 
+            p.lname as last_name,
+            p.username as username
         from users u 
-        left join profiles p on u.id = p.user_id 
-        where u.id = $1`, [id]
-    );
+        left join profiles p on user_id = p.user_id 
+        where user_id = $1`, [id]
+        );
 
-    return result.rows[0];
-};
+        const { followers_count, following_count } = await getFollowsCount(pool, id);
 
-const getAllProfileData = async () => {
-    const result = await pool.query(
-        `select 
-            u.id,
-            u.email, 
-            u.role, 
-            p.bio, 
-            p.avatar, 
-            p.fname, 
-            p.username,
-            p.lname 
-        from users u 
-        left join profiles p on u.id = p.user_id`
-    );
+        await pool.query('commit');
 
-    return result.rows;
+        return {
+            ...result.rows[0],
+            user_id: Number(result.rows[0].user_id),
+            followers_count,
+            following_count
+        };
+    } catch (error) {
+        await pool.query('ROLLBACK');
+        throw error;
+    }
 };
 
 const updateProfile = async ({ userId, body, avatar }) => {
     const { bio, fname, lname } = body;
 
-    let result;
-
-    if (!avatar) {
-        result = await pool.query(
-            `update profiles 
-                set bio = $1, fname = $2, lname = $3
-                where user_id = $4
-                returning *`,
-            [bio, fname, lname, userId]
-        );
-    } else {
-        result = await pool.query(
-            `update profiles 
-                set bio = $1, fname = $2, lname = $3, avatar = $4 
+    const result = await pool.query(
+        `update profiles 
+                set 
+                    bio = $1, 
+                    fname = $2, 
+                    lname = $3,
+                    avatar = COALESCE($4, avatar)
                 where user_id = $5
-                returning *`,
-            [bio, fname, lname, avatar, userId]
-        );
+                returning avatar, bio, fname, lname, user_id, username`,
+        [bio, fname, lname, avatar ?? null, userId]
+    );
+
+    if (result.rows.length === 0) {
+        return null;
     }
 
-    return result.rows;
+    return result.rows[0];
 };
 
 module.exports = {
     getProfileData,
-    getAllProfileData,
     updateProfile
 };

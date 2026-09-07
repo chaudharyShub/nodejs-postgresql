@@ -23,18 +23,43 @@ const createPost = async ({ userId, caption, image }) => {
         stream.end(image.buffer);
     });
 
-    return await postRepository.createPost({
-        userId,
-        caption,
-        imageUrl: result.secure_url
-    });
+    try {
+        return await postRepository.createPost({
+            userId,
+            caption,
+            imageUrl: result.secure_url
+        });
+    } catch (error) {
+        await cloudinary.uploader
+            .destroy(result.public_id)
+            .catch((cleanupError) => {
+                console.error("Failed to clean up orphaned Cloudinary asset:", result.public_id, cleanupError);
+            });
+
+        throw error;
+    }
+};
+
+const commentOnPost = async (user_id, post_id, comment) => {
+    return await postRepository.commentOnPost(user_id, post_id, comment);
+};
+
+const updateCommentOnPost = async (user_id, comment_id, comment) => {
+    return await postRepository.updateCommentOnPost(user_id, comment_id, comment);
 };
 
 const getPosts = async (id) => {
     return await postRepository.getPosts(id);
 };
 
+const likeUnlikePost = async (post_id, user_id) => {
+    return await postRepository.likeUnlikePost(post_id, user_id);
+};
+
 module.exports = {
     createPost,
-    getPosts
+    getPosts,
+    commentOnPost,
+    updateCommentOnPost,
+    likeUnlikePost
 };

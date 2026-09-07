@@ -13,37 +13,26 @@ const register = async (fname, lname, email, password, username) => {
 
     const token = generateToken(user);
 
-    return {
-        user, token
-    };
+    delete user.role;
+    delete user.email;
+
+    return { user, token }; 
 };
 
 const login = async (email, password) => {
-    const user = await findByEmail(email);
+    const existingUser = await findByEmail(email);
 
-    if (!user) throw new Error("Email doesn't exist, please register to continue!");
+    if (!existingUser) throw new Error("Email doesn't exist, please register to continue!");
 
-    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    const isPasswordValid = await bcrypt.compare(password, existingUser.password_hash);
 
     if (!isPasswordValid) throw new Error("Invalid password");
 
-    const userDetails = await getUserDetails(email);
+    const user = await getUserDetails(email);
 
-    const token = generateToken(userDetails);
+    const token = generateToken(user);
 
-    return {
-        user: {
-            id: userDetails.id,
-            fname: userDetails.fname,
-            lname: userDetails.lname,
-            email: userDetails.email,
-            role: userDetails.role,
-            username: userDetails.username,
-            bio: userDetails.bio,
-            avatar: userDetails.avatar,
-        },
-        token
-    };
+    return { user, token };
 };
 
 module.exports = {
