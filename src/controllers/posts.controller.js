@@ -68,7 +68,8 @@ const updateCommentOnPost = async (req, res, next) => {
 
 const getPosts = async (req, res, next) => {
     try {
-        const posts = await postService.getPosts(req.user.id);
+        const username = req.params.username;
+        const posts = await postService.getPosts(username);
 
         res.status(200).json({
             message: "Posts fetched successfully",
@@ -79,10 +80,55 @@ const getPosts = async (req, res, next) => {
     }
 };
 
+const getPostLikesList = async (req, res, next) => {
+    try {
+        const post_id = req.params.id;
+        const posts = await postService.getPostLikesList(post_id);
+
+        res.status(200).json({
+            message: "Posts fetched successfully",
+            data: posts
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+const getPostComments = async (req, res, next) => {
+    try {
+        const post_id = req.params.id;
+        const posts = await postService.getPostComments(post_id);
+
+        res.status(200).json({
+            message: "Posts fetched successfully",
+            data: posts
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// const getPostById = async (req, res, next) => {
+//     try {
+//         const post_id = req.params.id;
+
+//         const post = await postService.getPostById(post_id);
+
+//         res.status(200).json({
+//             message: "Posts fetched successfully",
+//             data: post
+//         });
+//     } catch (error) {
+
+//     }
+// };
+
 module.exports = {
     createPost,
     getPosts,
     commentOnPost,
     updateCommentOnPost,
-    likeUnlikePost
+    likeUnlikePost,
+    getPostLikesList,
+    getPostComments
 };

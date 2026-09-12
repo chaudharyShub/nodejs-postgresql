@@ -1,8 +1,12 @@
 const cloudinary = require("../config/cloudinary");
 const profileRepo = require("../repositories/profile.repository");
 
-const getProfileData = async (id) => {
-    return await profileRepo.getProfileData(id);
+const getMyProfile = async (user_id) => {
+    return await profileRepo.getMyProfile(user_id);
+};
+
+const getUserProfile = async (user_name) => {
+    return await profileRepo.getUserProfile(user_name);
 };
 
 const updateProfile = async ({ userId, body, avatar }) => {
@@ -39,18 +43,14 @@ const updateProfile = async ({ userId, body, avatar }) => {
     }
     return {
         user: {
-            avatar: user.avatar,
-            bio: user.bio,
-            first_name: user.fname,
-            last_name: user.lname,
+            ...user,
             user_id: Number(user.user_id),
-            username: user.username,
         }
     };
 };
 
 module.exports = {
-    getProfileData,
-    // getAllProfileData,
-    updateProfile
+    getUserProfile,
+    updateProfile,
+    getMyProfile
 };

@@ -48,12 +48,24 @@ const updateCommentOnPost = async (user_id, comment_id, comment) => {
     return await postRepository.updateCommentOnPost(user_id, comment_id, comment);
 };
 
-const getPosts = async (id) => {
-    return await postRepository.getPosts(id);
+const getPosts = async (user_name) => {
+    return await postRepository.getPosts(user_name);
 };
+
+// const getPostById = async (post_id) => {
+//     return await postRepository.getPostById(post_id);
+// };
 
 const likeUnlikePost = async (post_id, user_id) => {
     return await postRepository.likeUnlikePost(post_id, user_id);
+};
+
+const getPostLikesList = async (post_id) => {
+    return await postRepository.getPostLikesList(post_id);
+};
+
+const getPostComments = async (post_id) => {
+    return await postRepository.getPostComments(post_id);
 };
 
 module.exports = {
@@ -61,5 +73,7 @@ module.exports = {
     getPosts,
     commentOnPost,
     updateCommentOnPost,
-    likeUnlikePost
+    likeUnlikePost,
+    getPostLikesList,
+    getPostComments
 };

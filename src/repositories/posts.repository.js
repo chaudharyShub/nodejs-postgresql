@@ -3,13 +3,22 @@ const pool = require("../config/db");
 const createPost = async ({ userId, caption, imageUrl }) => {
     const result = await pool.query(
         `
-        INSERT INTO posts (
-            user_id,
-            caption,
-            image_url
+        with new_post as (
+            insert into posts (
+                user_id,
+                caption,
+                image_url
+            )
+            values ($1, $2, $3)
+            returning caption, image_url, id as post_id
         )
-        VALUES ($1, $2, $3)
-        RETURNING *
+        select 
+            caption, 
+            image_url, 
+            post_id::int,
+            0 as likes_count,
+            0 as comments_count
+        from new_post
         `,
         [userId, caption, imageUrl]
     );
@@ -17,25 +26,18 @@ const createPost = async ({ userId, caption, imageUrl }) => {
     return result.rows[0];
 };
 
-const getPosts = async (id) => {
+const getPosts = async (user_name) => {
     const result = await pool.query(
-        // `select
-        //     id, image_url, caption, created_at
-        //     from posts where user_id = $1`, [id]
         `select
-            p.id, 
+            p.id::int as post_id,
             p.image_url, 
             p.caption, 
             p.created_at,
-            l.user_id,
-            c.user_id,
-            c.comment
-            from posts p 
-            left join 
-                likes l on p.id = l.post_id
-            left join 
-                comments c on p.id = c.post_id
-            where p.user_id = $1`, [id]
+            ( select count(*) from likes l where l.post_id = p.id )::int as likes_count,
+            ( select count(*) from comments c where c.post_id = p.id )::int as comments_count,
+        from posts p
+        left join profiles pf on p.user_id = pf.user_id
+        where pf.username = $1`, [user_name]
     );
 
     return result.rows;
@@ -65,42 +67,94 @@ const updateCommentOnPost = async (user_id, comment_id, comment) => {
 };
 
 const likeUnlikePost = async (post_id, user_id) => {
-    try {
-        await pool.query('begin');
+    const client = await pool.connect();
 
-        const result = await pool.query(
-            `delete from likes 
-                where post_id = $1 and user_id = $2
-                returning *`,
+    try {
+        await client.query('BEGIN');
+
+        const deleted = await client.query(
+            `DELETE FROM likes
+             WHERE post_id = $1
+               AND user_id = $2
+             RETURNING id`,
             [post_id, user_id]
         );
 
-        if (result.rowCount === 0) {
-            const result = await pool.query(
-                `insert into likes (post_id, user_id)
-                values ($1, $2)
-                returning *`,
-                [post_id, user_id]
+        if (deleted.rowCount > 0) {
+            const result = await client.query(
+                `SELECT COUNT(*)::int AS count
+                 FROM likes
+                 WHERE post_id = $1`,
+                [post_id]
             );
 
-            await pool.query('commit');
+            await client.query('COMMIT');
 
             return {
-                liked: true,
-                likes: result.rows[0]
+                liked: false,
+                likes: result.rows[0].count
             };
         }
 
-        await pool.query('commit');
+        await client.query(
+            `INSERT INTO likes (post_id, user_id)
+             VALUES ($1, $2)`,
+            [post_id, user_id]
+        );
+
+        const result = await client.query(
+            `SELECT COUNT(*)::int AS count
+             FROM likes
+             WHERE post_id = $1`,
+            [post_id]
+        );
+
+        await client.query('COMMIT');
 
         return {
-            liked: false,
-            likes: null
+            liked: true,
+            likes: result.rows[0].count
         };
+
     } catch (error) {
-        await pool.query('ROLLBACK');
+        await client.query('ROLLBACK');
         throw error;
+    } finally {
+        client.release();
     }
+};
+
+const getPostLikesList = async (post_id) => {
+    const result = await pool.query(
+        `select 
+	        l.user_id::int,
+	        p.username,
+	        p.avatar,
+	        p.fname,
+	        p.lname
+	    from likes l 
+	    left join profiles p on l.user_id = p.user_id where l.post_id = $1
+        `, [post_id]
+    );
+
+    return result.rows;
+};
+
+const getPostComments = async (post_id) => {
+    const result = await pool.query(
+        `select 
+	        c.user_id::int,
+	        c.comment,
+	        p.username,
+	        p.avatar,
+	        p.fname as first_name,
+	        p.lname as last_name
+	    from comments c 
+	    left join profiles p on c.user_id = p.user_id where c.post_id = $1
+        `, [post_id]
+    );
+
+    return result.rows;
 };
 
 module.exports = {
@@ -108,5 +162,7 @@ module.exports = {
     getPosts,
     commentOnPost,
     updateCommentOnPost,
-    likeUnlikePost
+    likeUnlikePost,
+    getPostLikesList,
+    getPostComments
 };

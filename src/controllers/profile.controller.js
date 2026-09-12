@@ -1,8 +1,21 @@
 const profileService = require('../services/profile.service');
 
-const getProfileData = async (req, res, next) => {
+const getMyProfile = async (req, res, next) => {
     try {
-        const result = await profileService.getProfileData(req.params.id);
+        const result = await profileService.getMyProfile(req.user.id);
+
+        res.status(200).json({
+            message: "Your data fetched successfully",
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+const getUserProfile = async (req, res, next) => {
+    try {
+        const result = await profileService.getUserProfile(req.params.user_name);
 
         res.status(200).json({
             message: "User fetched successfully",
@@ -34,7 +47,11 @@ const updateProfile = async (req, res, next) => {
     }
 };
 
+const followUnfollowUser = () => { };
+
 module.exports = {
-    getProfileData,
-    updateProfile
+    getUserProfile,
+    updateProfile,
+    getMyProfile,
+    followUnfollowUser
 };

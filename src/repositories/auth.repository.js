@@ -33,7 +33,7 @@ const getUserDetails = async (email) => {
 
         const userId = user_details.rows[0].user_id;
 
-        const { followers_count, following_count } = await getFollowsCount(pool, userId);
+        const { followers_count, following_count, posts_count } = await getFollowsCount(pool, userId);
 
         await pool.query('commit');
 
@@ -41,7 +41,8 @@ const getUserDetails = async (email) => {
             ...user_details.rows[0],
             user_id: Number(userId),
             followers_count,
-            following_count
+            following_count,
+            posts_count
         };
     } catch (error) {
         await pool.query('ROLLBACK');
@@ -82,23 +83,16 @@ const createUser = async (fname, lname, email, passwordHash, username) => {
 
         const userId = user_details.rows[0].user_id;
 
-        const posts_count = await pool.query(
-            `select 
-                count(*) from posts
-                where user_id = $1`,
-            [userId]
-        );
-
-        const { followers_count, following_count } = await getFollowsCount(pool, userId);
+        const { followers_count, following_count, posts_count } = await getFollowsCount(pool, userId);
 
         await pool.query('commit');
 
         return {
             ...user_details.rows[0],
             user_id: Number(user_details.rows[0].user_id),
-            posts_count: Number(posts_count.rows[0].count),
             followers_count,
-            following_count
+            following_count,
+            posts_count
         };
     } catch (error) {
         await pool.query('ROLLBACK');
